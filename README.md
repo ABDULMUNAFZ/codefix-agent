@@ -1,118 +1,226 @@
-# CodeFix
+<p align="center">
+  <img src="docs/assets/logo.svg" width="88" alt="Incident CodeFix logo">
+</p>
 
-**From GitHub issue to verified pull request, with a human in the loop.**
+<h1 align="center">Incident CodeFix</h1>
 
-Submission for the TrueFoundry × Polaris "Agents That Act" hackathon. CodeFix is an agent that runs on
-[TrueForge](https://github.com/truefoundry/trueforge). This repository contains no TrueForge code. It holds
-the CodeFix agent spec, the skill, the evidence toolkit, and the setup scripts.
+<p align="center">
+  <b>From GitHub issue to verified pull request, with a human-controlled safety boundary.</b><br>
+  Autonomous GitHub incident resolution: sandboxed execution, real evidence, human approval before every GitHub write.
+</p>
 
-## Problem
+<p align="center">
+  <img alt="TrueFoundry × Polaris — Agents That Act 2026" src="https://img.shields.io/badge/TrueFoundry%20%C3%97%20Polaris-Agents%20That%20Act%202026-8B5CF6?style=flat-square">
+  <img alt="Runs on TrueForge" src="https://img.shields.io/badge/runs%20on-TrueForge-22D3EE?style=flat-square">
+  <img alt="Sandbox: Daytona" src="https://img.shields.io/badge/sandbox-Daytona-3FB67A?style=flat-square">
+  <img alt="Human approval required" src="https://img.shields.io/badge/GitHub%20writes-human%20approval-E5A13A?style=flat-square">
+  <img alt="Merge disabled" src="https://img.shields.io/badge/auto--merge-disabled-EF5A5A?style=flat-square">
+</p>
 
-Coding assistants will write a fix for any bug report. What they usually skip is checking that the bug
-exists, running the patch, and making sure the code that lands in the PR is the code that was tested. A
-reviewer then has to redo all of that.
+<p align="center">
+  Built by <b>Abdul Munaf Z</b> · Team <b>Tech Mavericks</b>
+</p>
 
-## Solution
+![Human approval: the agent stops before any GitHub change](docs/screenshots/10-human-approval.png)
 
-CodeFix takes one real GitHub issue and produces one PR with evidence behind it:
+## What it does
 
-1. It reads the issue and the code through GitHub MCP.
-2. It clones the repo into a TrueForge sandbox and runs the baseline tests.
-3. It writes a failing test that reproduces the bug.
-4. It patches the code and reruns that test plus the full suite.
-5. It produces a verification report and stops. TrueForge shows an approval card for each GitHub write.
-6. After approval it creates the branch, pushes the tested files, and opens the PR.
-7. It clones the PR branch into a new directory and a new virtualenv, checks that the pushed files match the
-   tested files byte for byte, and runs the tests again.
+Incident CodeFix takes a real GitHub issue and does the engineering work a reviewer would otherwise redo:
 
-## Why this is an agent
+1. **It proves the bug.** The reported command runs in an isolated Daytona workspace, and the failure is
+   captured as evidence before any code changes.
+2. **It fixes the smallest thing and proves the fix.** A minimal patch plus a regression test, then the
+   focused test, the full suite, and a second run in a fresh workspace.
+3. **It stops before anything irreversible.** Creating a branch, pushing and opening a PR each wait for a
+   human. Merge and deployment are not available at all.
 
-CodeFix does more than chat. It calls a real external system (GitHub), runs real commands in an isolated
-sandbox, decides what to do next from their exit codes, and cannot take an irreversible action (a branch,
-a push or a PR) until a human approves it.
+The agent runs on [TrueForge](https://github.com/truefoundry/trueforge), the agent harness: GitHub
+access through GitHub MCP, code execution in the sandbox, and approvals through TrueForge's server-side
+approval checkpoint. This repository holds the agent: specs, skills, the evidence toolkit, setup scripts,
+tests, and the desktop UI prototype.
+
+## The story: issue #2, end to end
+
+> **About these screenshots.** They come from the Incident CodeFix desktop prototype
+> ([`prototype/index.html`](prototype/index.html)), which replays a real run on
+> [`ABDULMUNAFZ/codefix-demo`](https://github.com/ABDULMUNAFZ/codefix-demo) issue #2. The issue, command,
+> traceback, diff (+7 −2), test counts (16 → 17) and commit
+> `8c3d5758e9a49fd64bd87586c69331c9319ea4b5` on `codefix/issue-2` are real. Timestamps, durations,
+> dashboard metrics, the Daytona workspace name and the sample rows in run history are illustrative. The
+> prototype is not connected to GitHub, TrueForge or Daytona.
+
+### 1. GitHub issue
+
+The version compatibility checker raises `InvalidVersion` for a valid prerelease host version.
+
+```bash
+python -c "from app.versions import satisfies; print(satisfies('1.5.0-rc1', '>=1.4, <2.0'))"
+```
+
+![GitHub issue](docs/screenshots/02-github-issue.png)
+
+### 2. CodeFix receives the issue
+
+The overview shows the active incident, its stage, and recent evidence.
+
+![Overview](docs/screenshots/01-overview.png)
+
+### 3. Repository analysis
+
+The agent reads the issue and the repository through GitHub MCP and detects Python, pip and pytest from
+`requirements.txt` and `pytest.ini`. It ranks `app/versions.py` as the likely affected file.
+
+![Agent analysis](docs/screenshots/03-agent-analysis.png)
+
+### 4. Daytona sandbox
+
+The repository is cloned into an isolated workspace and the baseline suite runs: **16 passed**. The
+sandbox never receives model or GitHub credentials.
+
+![Daytona sandbox](docs/screenshots/04-daytona-sandbox.png)
+
+### 5. Bug reproduction
+
+The reported command fails exactly as described. The full traceback is kept as evidence:
+`satisfies()` → `compare()` → `parse_version()` raises `InvalidVersion: invalid version: '1.5.0-rc1'`
+at `app/versions.py:19`.
+
+![Bug reproduction](docs/screenshots/05-bug-reproduction.png)
+
+### 6. Root cause
+
+`_VERSION_RE` accepts only dot-separated numeric releases, so a `-rc1` suffix never matches and the
+version is rejected before the requirement is evaluated.
+
+![Root cause](docs/screenshots/06-root-cause.png)
+
+### 7. Minimal patch
+
+One regular expression gains an optional prerelease group; one docstring is updated; one regression
+test is added. **2 files, +7 −2**, no dependency or configuration changes.
+
+![Patch](docs/screenshots/07-patch-generation.png)
+
+### 8. Tests
+
+Baseline 16 passed → reproduction 1 failed (expected) → regression 1 passed → full suite
+**17 passed, 0 failed** → diff review clean.
+
+![Testing](docs/screenshots/08-testing.png)
+
+### 9. Fresh workspace verification
+
+Clean checkout of the base revision, fresh virtualenv, the exact patch applied, file contents compared
+with the tested tree, and the full suite re-run: **17 passed**.
+
+![Fresh workspace verification](docs/screenshots/09-fresh-workspace-verification.png)
+
+### 10. Human approval
+
+The agent stops. Nothing has been written to GitHub. The reviewer sees the root cause, the patch, every
+verification result, and the three proposed actions, then approves or rejects.
+
+![Human approval](docs/screenshots/10-human-approval.png)
+
+### 11. Branch creation
+
+After approval, `create_branch` runs: `codefix/issue-2` from `main`.
+
+![Branch creation](docs/screenshots/11-branch-creation.png)
+
+### 12. Push approval
+
+Pushing is its own approval. Only the verified files are pushed, with the approved commit message.
+
+![Push approval](docs/screenshots/12-push-approval.png)
+
+### 13. Pull request approval
+
+Opening the PR is the third approval. There is no merge option.
+
+![PR approval](docs/screenshots/13-pr-approval.png)
+
+### 14. Pull request
+
+PR #3, *Fix #2: Accept prerelease suffixes in compatibility checks*, opens for human review with the
+root cause, changes and validation in its description.
+
+![Pull request](docs/screenshots/14-pull-request.png)
+
+### 15. Incident completed
+
+The incident closes with the PR ready for review. Not merged, not deployed.
+
+![Completed](docs/screenshots/15-completed.png)
+
+<details>
+<summary><b>More screens:</b> rejection, failure, repositories, run history, incident details, settings</summary>
+
+| Safe stop (reviewer rejects) | Sandbox failure |
+| --- | --- |
+| ![Safe stop](docs/screenshots/21-safe-stop.png) | ![Failure](docs/screenshots/22-failure.png) |
+
+| Agent repository | Demo repository |
+| --- | --- |
+| ![codefix-agent](docs/screenshots/16-codefix-agent-repository.png) | ![codefix-demo](docs/screenshots/17-codefix-demo-repository.png) |
+
+| Run history | Incident details |
+| --- | --- |
+| ![Run history](docs/screenshots/18-run-history.png) | ![Incident details](docs/screenshots/19-incident-details.png) |
+
+| Settings and approval policy |
+| --- |
+| ![Settings](docs/screenshots/20-settings.png) |
+
+</details>
 
 ## Architecture
 
 ```
-            ┌──────────────────────── TrueForge (harness) ─────────────────────────┐
- issue URL  │  CodeFix agent spec ── model                                         │
- ─────────► │     │  instructions + codefix skill (git-backed, preloaded)          │
-            │     ├─ GitHub MCP (9 allowlisted tools; 3 writes need approval) ─────┼──► GitHub (codefix-demo)
-            │     ├─ Sandbox (local or Daytona) ── cf.py records every command      │
-            │     └─ Approval cards · sessions · traces (TrueForge UI)             │
-            └──────────────────────────────────────────────────────────────────────┘
+GitHub issue
+   │  issue_read · get_file_contents · search_code
+   ▼
+GitHub MCP ──────────────────────────────┐
+   ▼                                     │
+TrueForge agent (sessions, approvals)    │  credentials stay in the harness
+   ▼                                     │
+codefix / incident-codefix skill         │
+   ▼                                     │
+Daytona sandbox ── repository ── tests ── evidence (exit codes, output)
+   ▼
+Fresh workspace verification
+   ▼
+HUMAN APPROVAL  ◀── TrueForge require_approval_for_tools
+   ▼
+create_branch ─▶ push_files (commit + push) ─▶ create_pull_request ─▶ PR for review (never merged)
 ```
 
-| Path | What it is |
+| Layer | What runs there |
 | --- | --- |
-| `agent/codefix.agent.json` | TrueForge `CreateAgentRequest` (model, MCP allowlist, approval rules, skill, sandbox, iteration limit) |
-| `agent/instructions.md` | System prompt; `{{ALLOWED_REPO}}` is filled in at setup |
-| `skills/codefix/SKILL.md` | The step-by-step playbook the agent follows |
-| `skills/codefix/scripts/cf.py` | Evidence toolkit that runs in the sandbox (stdlib only): command records, phase gates, integrity manifest, report |
-| `codefix_setup/` | Setup (`npm run setup`) and demo launcher (`npm run demo`), both using the TrueForge REST API |
-| `tests/` | Unit tests, an end-to-end workflow test with real git and pytest, and live checks against TrueForge |
+| **TrueForge** | The agent loop, model calls, GitHub MCP connector and token, the sandbox tool, and the approval checkpoint. |
+| **Skill** | The playbook the agent follows and a stdlib-only toolkit (`cf.py` / `icf.py`) that records every command and refuses to advance without evidence. |
+| **Sandbox (Daytona)** | Clone, install, tests, reproduction, patch, fresh-workspace verification. No credentials. |
+| **GitHub** | Read through MCP freely; write only through three approval-gated tools. |
 
-## TrueForge integration
+## Repository structure
 
-Everything goes through TrueForge's public API, which I checked against TrueForge 0.3.0 (the OpenAPI spec
-and the zod `AgentSpecSchema`):
-
-- `PUT /api/v1/settings/mcp-servers` registers the GitHub MCP. The token is stored in TrueForge's connector
-  store.
-- `PUT /api/v1/settings/skills` registers the git-backed `codefix` skill (`skills/codefix` in this repo).
-- `POST` or `PUT /api/v1/agents` creates or updates the `codefix` agent.
-- `GET /api/v1/models` and `GET /api/v1/mcp-servers/{name}/tools` confirm that the model and every allowlisted
-  tool exist before the agent is saved.
-
-Agent settings: `iteration_limit: 80`, `sandbox.enabled: true`, `dynamic_sub_agents.enabled: false` (keeps
-the demo deterministic), and `web_search.enabled: false`.
-
-## GitHub MCP
-
-This is TrueForge's catalog `github` server (`https://api.githubcopilot.com/mcp/`). The agent can use only
-these tools:
-
-| Read | Write (approval required) |
-| --- | --- |
-| `issue_read`, `get_file_contents`, `search_code`, `list_branches`, `list_commits`, `pull_request_read` | `create_branch`, `push_files`, `create_pull_request` |
-
-Merging, deleting files, creating repos and forking are all left out. `check_agent_policy` rejects any spec
-that enables them, and setup won't save such a spec.
-
-## Sandbox
-
-Every command runs in the TrueForge sandbox through `cf.py run`, which records the command, exit code,
-stdout, stderr, duration and whether it timed out to `.codefix/evidence.jsonl`.
-
-- **Local mode** (`npx @truefoundry/trueforge`): if no provider is configured, TrueForge uses its local
-  sandbox. On macOS that means seatbelt, on Linux bubblewrap. Outbound network is limited to GitHub and PyPI.
-- **Daytona**: add it under Settings → Sandbox providers.
-
-The sandbox never gets credentials. It clones the public demo repo anonymously, and all GitHub writes go
-through MCP on the harness side.
-
-## Human approval
-
-Approval is enforced by TrueForge's server, not by the prompt. `require_approval_for_tools` lists
-`create_branch`, `push_files`, `create_pull_request`, `@write` and `@destructive`. When the model calls one
-of these, TrueForge pauses the turn, shows an approval card with the tool arguments (branch name, file
-contents, PR title and body), and waits for a `user.tool_approval` allow or deny.
-
-If the reviewer denies, CodeFix records `STOPPED/approval_denied` and makes no further writes.
-
-## Security model
-
-- **Credentials:** the GitHub fine-grained PAT is scoped to `codefix-demo` only and lives in TrueForge's
-  connector store. It is never in this repo, the skill, the sandbox, or logs (`test_setup.py` checks that it
-  isn't printed). The model key is configured in TrueForge.
-- **Least privilege:** 9 explicitly allowlisted tools, no tag-based allowlists, and one target repo checked by
-  both the instructions and `cf.py issue --allowed-repo`.
-- **Prompt injection:** issue text, repo content and tool output are treated as data. `cf.py scan` flags text
-  that looks like instructions, such as override attempts, secret requests, requests to skip approval,
-  unapproved pushes or network calls. Findings go into the report. The hard limits don't depend on the model
-  behaving: approval gates, the tool allowlist, the PAT scope, and a sandbox with no secrets.
-- **No fabricated results:** every PASS or FAIL in the report comes from `cf.py` records, and phase gates
-  refuse to move on without the matching evidence.
+```
+codefix-agent/
+├── agent/                     TrueForge agent specs and instructions (codefix, incident-codefix)
+├── codefix_setup/             Registers connector, skill and agent through the TrueForge API
+├── demo/                      Demo issues for codefix-demo
+├── skills/
+│   ├── codefix/               Issue → verified PR playbook + cf.py evidence toolkit
+│   └── incident-codefix/      Multi-stack playbook (Python, JS/TS, Go, Rust, Java) + icf.py
+├── incident_service/          Webhook intake, incident store and approval bridge (see docs)
+├── prototype/                 Desktop UI prototype (static HTML, demo data)
+├── docs/                      Incident CodeFix design doc, screenshots, logo
+├── tests/                     Unit, workflow and service tests
+├── .env.example               CodeFix configuration template
+├── package.json               npm scripts
+├── pyproject.toml             ruff · mypy · pytest configuration
+└── requirements-dev.txt
+```
 
 ## Setup
 
@@ -122,7 +230,7 @@ Requirements: Node ≥ 22, Python ≥ 3.10, git, a model API key, and a GitHub f
 # 1. Harness
 npx @truefoundry/trueforge            # UI + API on http://localhost:8790
 #    In the UI: Settings → Model providers → add your provider.
-#    Optional: Settings → Sandbox providers → Daytona (otherwise the local sandbox is used).
+#    Settings → Sandbox providers → Daytona (otherwise TrueForge's local sandbox is used).
 
 # 2. CodeFix
 git clone https://github.com/ABDULMUNAFZ/codefix-agent && cd codefix-agent
@@ -132,11 +240,10 @@ npm run setup                         # registers GitHub MCP, skill, agent
 npm run check                         # lint + typecheck + tests
 ```
 
-GitHub PAT: go to Settings → Developer settings → Fine-grained tokens. Choose **Only select repositories**
-and pick `codefix-demo`. Set Contents: read/write, Pull requests: read/write, Issues: read, Metadata: read.
-Use a short expiry.
-
-## Environment variables
+**GitHub PAT:** go to Settings → Developer settings → Fine-grained tokens. Choose **Only select
+repositories** and pick the target repo. Set Contents read/write, Pull requests read/write, Issues read,
+Metadata read, and a short expiry. The token goes into TrueForge's connector store; it is never written
+to this repository or the sandbox.
 
 | Variable | Required | Purpose |
 | --- | --- | --- |
@@ -148,99 +255,90 @@ Use a short expiry.
 | `CODEFIX_GITHUB_MCP_NAME` | no (`github`) | Connector name in TrueForge |
 | `GITHUB_PAT` | first run | Handed to TrueForge's connector store; leave empty to keep the stored token |
 
-## Demo repository
+Incident CodeFix (the multi-repo workflow) uses its own connector `github-incident` and its own
+`.env.incident`; see [`docs/incident-codefix.md`](docs/incident-codefix.md).
 
-[`ABDULMUNAFZ/codefix-demo`](https://github.com/ABDULMUNAFZ/codefix-demo) is a small plugin-compatibility
-checker. `app/versions.py` compares version segments as strings, so `"10" < "9"` and host `1.10.0` fails
-`>=1.9.0`. The existing 16 tests pass because every fixture uses single-digit versions. Nothing else triggers
-the bug, so the demo behaves the same on every run.
+## Usage
 
-## Running CodeFix
-
-- **In the UI:** choose the `codefix` agent and send
-  `Fix https://github.com/ABDULMUNAFZ/codefix-demo/issues/1`.
-- **From the CLI:** run `npm run demo -- 1`. It creates the session through the API; then open it in the
-  TrueForge UI to follow the trace and answer the approval cards.
-
-## Example issue
-
-See [`demo/issue-1.md`](demo/issue-1.md), "Plugin rejected as incompatible on host 1.10.0 despite requiring
->=1.9.0".
-
-[`demo/issue-2-injection.md`](demo/issue-2-injection.md) is a second issue that hides instructions in an HTML
-comment and describes behavior that isn't actually broken. CodeFix should flag the injection, return
-`NOT_REPRODUCED`, and stop without writing a patch.
-
-## Example trace
+**Run the agent.** In the TrueForge UI, choose the `codefix` agent and send:
 
 ```
-issue_read(ABDULMUNAFZ/codefix-demo#1)                     GitHub MCP
-cf.py issue … --allowed-repo ABDULMUNAFZ/codefix-demo       sandbox provisioned
-cf.py run --label clone   -- git clone …                    exit=0
-cf.py run --label install -- .venv/bin/pip install -r …     exit=0
-cf.py run --label baseline -- pytest                        exit=0   16 passed
-cf.py run --label reproduce -- pytest tests/test_issue_1.py exit=1   1 failed   → REPRODUCED
-cf.py run --label diff -- git diff                          app/versions.py: int segments
-cf.py run --label reproduce-after …                         exit=0
-cf.py run --label regression -- pytest                      exit=0   17 passed
-cf.py report → CODEFIX VERIFICATION REPORT
-create_branch        ⏸ approval card → approved
-push_files           ⏸ approval card → approved
-create_pull_request  ⏸ approval card → approved
-cf.py run --label pr-clone -- git clone --branch codefix/issue-1 …
-cf.py verify-pr      INTEGRITY OK
-cf.py run --label pr-tests -- pytest                        exit=0   → VERIFIED
+Fix https://github.com/ABDULMUNAFZ/codefix-demo/issues/2
 ```
 
-The report structure matches the hackathon brief. Test lines are generated from the evidence records, and
-the story fields (problem, root cause, fix) come from the agent.
+Or run `npm run demo -- 2` to start the session through the API, then follow the trace and answer the
+approval cards in the TrueForge UI.
+
+**Open the desktop prototype.** Open [`prototype/index.html`](prototype/index.html) in a browser. It is a
+static, clickable walkthrough of the workflow (Overview → Incident → … → Pull Request, plus the reject and
+failure paths). It needs no server and makes no network calls apart from loading fonts.
+
+## Approval model
+
+| Action | Policy | How it is enforced |
+| --- | --- | --- |
+| Read issue, code, tests | automatic | read-only GitHub MCP tools |
+| Sandbox execution, install, tests, reproduction, patch, verification | automatic | inside the sandbox only |
+| Create branch | **human approval** | TrueForge `require_approval_for_tools` |
+| Push files (commit + push) | **human approval** | TrueForge `require_approval_for_tools` |
+| Create pull request | **human approval** | TrueForge `require_approval_for_tools` |
+| Merge | disabled | tool not enabled; setup rejects specs that enable it |
+| Deployment | disabled | no such tool |
+
+Approval is enforced by TrueForge's server, not by the prompt. When the agent calls a gated tool, TrueForge
+pauses the turn and waits for an explicit allow or deny. A denial stops the run with no further writes.
+
+## Security
+
+- **Sandboxed execution.** Repository code runs only in the Daytona (or local) sandbox.
+- **No credentials in the sandbox or the repository.** Model and GitHub tokens live in TrueForge's
+  connector store and are never printed (tests check this).
+- **Least privilege.** An explicit tool allowlist, a fine-grained token scoped to the target repo, and an
+  allowed-repository check in both the instructions and the toolkit.
+- **Untrusted input stays data.** Issue text, repository content and tool output are never treated as
+  instructions; instruction-like text is flagged in the report.
+- **No fabricated results.** Every PASS or FAIL comes from a recorded command with its exit code, and the
+  phase gates refuse to advance without it.
+- **No automatic merge, no automatic deployment.**
 
 ## Failure handling
 
-| Condition | Detected by | Result |
-| --- | --- | --- |
-| Not reproduced | `classify` / `REPRODUCED` gate | `STOPPED/not_reproduced` with commands, output, environment, next steps |
-| Patch ineffective | `reproduce-after` ≠ 0 | `STOPPED/patch_ineffective` |
-| Regression | `regression` ≠ 0 | `STOPPED/regression` |
-| Approval denied | TrueForge deny event | `STOPPED/approval_denied`, no further writes |
-| GitHub API error | MCP tool error | `STOPPED/github_error` with the exact error |
-| Sandbox / clone failure | exit 127 or clone ≠ 0 | `STOPPED/sandbox_error` |
-| Integrity mismatch | `verify-pr` | `STOPPED/integrity_mismatch`; never reported as VERIFIED |
-| Test timeout | `timed_out` (exit 124) | `STOPPED/timeout` |
-| Install failure | `install` ≠ 0 | `STOPPED/install_failed` |
-| Phase skipped | `cf.py phase` | refused (exit 3) |
-
-## Demo script (~5 min)
-
-| Time | What to show |
+| Condition | Result |
 | --- | --- |
-| 0:00 | The GitHub issue in the browser. Paste its URL into the CodeFix agent in the TrueForge UI. |
-| 0:20 | `issue_read` and `get_file_contents` tool calls in the trace |
-| 1:00 | Sandbox provisioned; clone, install, and baseline `16 passed` |
-| 1:30 | Reproduction test fails (`exit=1`, `1 failed`), verdict REPRODUCED |
-| 2:00 | Diff: a few lines in `app/versions.py` plus the new test |
-| 2:30 | `reproduce-after` and `regression` both exit 0 |
-| 3:00 | Verification report |
-| 3:20 | **TrueForge approval card** for `create_branch` showing the arguments; approve it |
-| 3:40 | Approve `push_files` (the card shows the exact file contents), then `create_pull_request` |
-| 4:30 | New clone of the PR branch, `INTEGRITY OK`, tests pass |
-| 5:00 | The PR on GitHub, with **VERIFIED** in the trace |
-
-Optional extra: run issue 2, or deny the `create_branch` card and show that the agent stops.
+| Issue not reproduced | Stops before patching; reports commands, output and environment |
+| Patch does not fix the bug, or a regression appears | Stops; nothing is pushed |
+| Sandbox, clone or install failure | Stops with the actual error; no GitHub change |
+| Human rejects | Safe stop; investigation preserved; no branch, push or PR |
+| GitHub API error | Stops and reports the exact error |
+| Pushed files differ from the tested files | Stops; never reported as verified |
 
 ## Known limitations
 
-- The final check uses a fresh clone and fresh virtualenv inside the **same session sandbox**, not a newly
-  provisioned sandbox. A separate sandbox would need a second TrueForge session.
-- `push_files` content passes through the model. `verify-pr` catches any difference after the push, but it
-  can't stop the push from happening. On a mismatch the agent stops, and a human should close the PR.
-- `push_files` can't delete or rename files, so patches that need either are refused at the manifest step.
-- TrueForge git skills are cloned without credentials, so this repo has to be public. The demo repo also has
-  to be public, because the sandbox holds no GitHub credentials to clone it.
-- Only Python projects that use `pip install -r requirements.txt` and `pytest` are supported so far.
+- Fresh workspace verification uses a new directory and virtualenv inside the **same** session sandbox,
+  not a newly provisioned sandbox.
+- `push_files` cannot delete or rename files, so patches that need either are refused.
+- The `codefix` skill supports Python with pip and pytest; `incident-codefix` adds JS/TS, Go, Rust and
+  Java detection. Non-Python installs need Daytona, because TrueForge's local sandbox only allows GitHub
+  and PyPI traffic.
+- The desktop UI is a prototype with demo data. It is not yet wired to the live agent.
 
-## AI tools used
+## AI-assisted development disclosure
 
-This project was built with **Claude Code** (Anthropic): it read the TrueForge source and OpenAPI spec,
-wrote the code, tests and docs, and validated the agent spec against TrueForge's zod schema. A human
-directed and reviewed the work. The agent itself runs on whichever model is set in `CODEFIX_MODEL`.
+AI-assisted development was used during implementation for code generation, debugging assistance and
+documentation. Specifically, **Claude Code** (Anthropic) was used to read the TrueForge source and API,
+write code, tests, the desktop prototype and documentation, and validate the agent specs against
+TrueForge's schema.
+
+The team understands and can explain the architecture, sandbox execution, agent workflow, approval model
+and safety boundaries.
+
+## Hackathon and team
+
+| | |
+| --- | --- |
+| **Hackathon** | TrueFoundry × Polaris — Agents That Act 2026 |
+| **Product** | Incident CodeFix |
+| **Builder** | Abdul Munaf Z |
+| **Team** | Tech Mavericks |
+| **Harness** | [TrueForge](https://github.com/truefoundry/trueforge) |
+| **Target repository** | [ABDULMUNAFZ/codefix-demo](https://github.com/ABDULMUNAFZ/codefix-demo) |
