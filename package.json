@@ -1,0 +1,17 @@
+{
+  "name": "codefix-agent",
+  "version": "0.1.0",
+  "private": true,
+  "description": "CodeFix: GitHub issue to verified pull request, with a human in the loop. Runs on TrueForge.",
+  "scripts": {
+    "bootstrap": "python3 -m venv .venv && .venv/bin/pip install -q -r requirements-dev.txt",
+    "setup": ".venv/bin/python -m codefix_setup.setup",
+    "demo": ".venv/bin/python -m codefix_setup.demo",
+    "test": ".venv/bin/python -m pytest",
+    "test:live": "CODEFIX_LIVE=1 .venv/bin/python -m pytest tests/integration",
+    "lint": ".venv/bin/ruff check . && .venv/bin/ruff format --check .",
+    "format": ".venv/bin/ruff format . && .venv/bin/ruff check --fix .",
+    "typecheck": ".venv/bin/mypy",
+    "check": "npm run lint && npm run typecheck && npm run test"
+  }
+}
