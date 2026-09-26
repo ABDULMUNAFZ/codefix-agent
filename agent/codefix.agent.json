@@ -1,0 +1,34 @@
+{
+  "name": "codefix",
+  "description": "Resolves a GitHub bug issue into a verified pull request: sandbox reproduction, minimal patch, tests, human approval, independent PR verification.",
+  "manifest": {
+    "model": { "name": "{{CODEFIX_MODEL}}" },
+    "instructions": "{{INSTRUCTIONS}}",
+    "mcp_servers": [
+      {
+        "name": "{{GITHUB_MCP_NAME}}",
+        "enable_tools": [
+          "issue_read",
+          "get_file_contents",
+          "search_code",
+          "list_branches",
+          "list_commits",
+          "pull_request_read",
+          "create_branch",
+          "push_files",
+          "create_pull_request"
+        ],
+        "require_approval_for_tools": ["@write", "@destructive", "create_branch", "push_files", "create_pull_request"],
+        "preload_tools": ["issue_read", "get_file_contents", "search_code"]
+      }
+    ],
+    "skills": [{ "name": "codefix", "preload": true }],
+    "config": {
+      "iteration_limit": 80,
+      "sandbox": { "enabled": true, "file_downloads": true },
+      "dynamic_sub_agents": { "enabled": false },
+      "web_search": { "enabled": false },
+      "ask_user_questions": { "enabled": true }
+    }
+  }
+}
