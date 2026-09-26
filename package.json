@@ -1,0 +1,27 @@
+{
+  "name": "codefix-agent",
+  "version": "1.0.0",
+  "description": "CodeFix — Autonomous GitHub Issue -> Reproduce -> Fix -> Test -> Human Approval -> Pull Request Agent",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "demo": "tsx src/demo/runDemo.ts",
+    "start": "tsx src/index.ts",
+    "test": "vitest run",
+    "register:trueforge": "tsx src/trueforge/registerAgent.ts"
+  },
+  "keywords": ["agent", "codefix", "github", "trueforge", "autonomous"],
+  "author": "CodeFix Team",
+  "license": "MIT",
+  "dependencies": {
+    "@types/node": "^26.6.3",
+    "chalk": "^4.1.2",
+    "dotenv": "^18.0.4",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "vitest": "^5.0.2"
+  }
+}
