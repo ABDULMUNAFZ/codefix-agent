@@ -332,6 +332,9 @@ TrueForge's schema.
 The team understands and can explain the architecture, sandbox execution, agent workflow, approval model
 and safety boundaries.
 
+<img width="1766" height="915" alt="Screenshot 2026-09-26 at 4 26 12 PM" src="https://github.com/user-attachments/assets/88c28f71-7719-441e-bd3c-010361450c5c" />
+
+
 ## Hackathon and team
 
 | | |
@@ -342,3 +345,6 @@ and safety boundaries.
 | **Team** | Tech Mavericks |
 | **Harness** | [TrueForge](https://github.com/truefoundry/trueforge) |
 | **Target repository** | [ABDULMUNAFZ/codefix-demo](https://github.com/ABDULMUNAFZ/codefix-demo) |
+
+
+
