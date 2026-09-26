@@ -1,3 +1,5 @@
+
+
 <p align="center">
   <img src="docs/assets/logo.svg" width="88" alt="Incident CodeFix logo">
 </p>
@@ -10,11 +12,13 @@
 </p>
 
 <p align="center">
-  <img alt="TrueFoundry × Polaris — Agents That Act 2026" src="https://img.shields.io/badge/TrueFoundry%20%C3%97%20Polaris-Agents%20That%20Act%202026-8B5CF6?style=flat-square">
-  <img alt="Runs on TrueForge" src="https://img.shields.io/badge/runs%20on-TrueForge-22D3EE?style=flat-square">
-  <img alt="Sandbox: Daytona" src="https://img.shields.io/badge/sandbox-Daytona-3FB67A?style=flat-square">
-  <img alt="Human approval required" src="https://img.shields.io/badge/GitHub%20writes-human%20approval-E5A13A?style=flat-square">
-  <img alt="Merge disabled" src="https://img.shields.io/badge/auto--merge-disabled-EF5A5A?style=flat-square">
+  <img src="docs/assets/badges/hackathon.svg" height="22" alt="TrueFoundry × Polaris: Agents That Act 2026">
+  <img src="docs/assets/badges/trueforge.svg" height="22" alt="Runs on TrueForge">
+  <img src="docs/assets/badges/daytona.svg" height="22" alt="Sandbox: Daytona">
+  <img src="docs/assets/badges/approval.svg" height="22" alt="GitHub writes: human approval">
+  <img src="docs/assets/badges/merge.svg" height="22" alt="Auto-merge: disabled">
+  <img src="docs/assets/badges/python.svg" height="22" alt="Python 3.10+">
+  <a href="LICENSE"><img src="docs/assets/badges/license.svg" height="22" alt="License: MIT"></a>
 </p>
 
 <p align="center">
@@ -214,9 +218,10 @@ codefix-agent/
 │   └── incident-codefix/      Multi-stack playbook (Python, JS/TS, Go, Rust, Java) + icf.py
 ├── incident_service/          Webhook intake, incident store and approval bridge (see docs)
 ├── prototype/                 Desktop UI prototype (static HTML, demo data)
-├── docs/                      Incident CodeFix design doc, screenshots, logo
+├── docs/                      Incident CodeFix design doc, screenshots, logo, badges
 ├── tests/                     Unit, workflow and service tests
 ├── .env.example               CodeFix configuration template
+├── LICENSE                    MIT
 ├── package.json               npm scripts
 ├── pyproject.toml             ruff · mypy · pytest configuration
 └── requirements-dev.txt
@@ -346,5 +351,8 @@ and safety boundaries.
 | **Harness** | [TrueForge](https://github.com/truefoundry/trueforge) |
 | **Target repository** | [ABDULMUNAFZ/codefix-demo](https://github.com/ABDULMUNAFZ/codefix-demo) |
 
+## License
 
+Released under the [MIT License](LICENSE). Copyright (c) 2026 Abdul Munaf Z.
 
+TrueForge is a separate project under its own license and is not included in this repository.
